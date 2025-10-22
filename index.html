@@ -114,6 +114,48 @@
         .page-bg {
             background-color: var(--bg-color);
         }
+
+        /* --- New Flip Animation --- */
+        @keyframes flip-anim {
+            0% {
+                transform: scaleY(1);
+                opacity: 1;
+            }
+
+            /* Wait until just before the halfway point */
+            49% {
+                transform: scaleY(1);
+                opacity: 1;
+            }
+
+            /* Flip over */
+            50% {
+                transform: scaleY(0);
+                opacity: 0.5;
+            }
+
+            /* Stay flipped while JS changes the number */
+            51% {
+                transform: scaleY(0);
+                opacity: 0.5;
+            }
+
+            /* Flip back */
+            100% {
+                transform: scaleY(1);
+                opacity: 1;
+            }
+        }
+
+        .digit-span {
+            display: inline-block;
+            /* Required for transforms */
+        }
+
+        .flipping {
+            /* 0.6s total duration */
+            animation: flip-anim 0.6s ease-out;
+        }
     </style>
 </head>
 
@@ -125,34 +167,59 @@
         <div id="widget-container"
             class="widget-container w-[280px] rounded-2xl shadow-lg p-5 flex flex-col items-center gap-5">
 
-            <!-- Timer Display: Reduced gap -->
-            <div class="flex gap-3">
-                <!-- FlipCard Minutes: Reduced size and font -->
+            <!-- Timer Display: 4-digit layout -->
+            <div class="flex items-center gap-1.5">
+                <!-- FlipCard Minutes Tens -->
                 <div class="flex flex-col items-center">
                     <div
-                        class="flip-card relative w-24 h-32 rounded-xl flex items-center justify-center text-6xl font-bold overflow-hidden shadow-lg">
+                        class="flip-card relative w-16 h-24 rounded-lg flex items-center justify-center text-5xl font-bold overflow-hidden shadow-lg">
                         <div class="absolute top-0 left-0 w-full h-1/2 bg-white/10"></div>
-                        <span id="minutes" class="relative z-10">25</span>
+                        <span id="minutes-tens" class="digit-span relative z-10">2</span>
                         <div class="flip-line absolute top-1/2 left-0 w-full h-0.5 z-20"></div>
                     </div>
-                    <!-- Label: Reduced margin-top -->
-                    <span class="label text-xs uppercase tracking-widest mt-2">Minutes</span>
                 </div>
-                <!-- FlipCard Seconds: Reduced size and font -->
+                <!-- FlipCard Minutes Ones -->
                 <div class="flex flex-col items-center">
                     <div
-                        class="flip-card relative w-24 h-32 rounded-xl flex items-center justify-center text-6xl font-bold overflow-hidden shadow-lg">
+                        class="flip-card relative w-16 h-24 rounded-lg flex items-center justify-center text-5xl font-bold overflow-hidden shadow-lg">
                         <div class="absolute top-0 left-0 w-full h-1/2 bg-white/10"></div>
-                        <span id="seconds" class="relative z-10">00</span>
+                        <span id="minutes-ones" class="digit-span relative z-10">5</span>
                         <div class="flip-line absolute top-1/2 left-0 w-full h-0.5 z-20"></div>
                     </div>
-                    <!-- Label: Reduced margin-top -->
-                    <span class="label text-xs uppercase tracking-widest mt-2">Seconds</span>
+                </div>
+
+                <!-- Colon Separator -->
+                <div class="text-5xl font-bold h-24 flex items-center" style="color: var(--flip-bg); line-height: 1;">:
+                </div>
+
+                <!-- FlipCard Seconds Tens -->
+                <div class="flex flex-col items-center">
+                    <div
+                        class="flip-card relative w-16 h-24 rounded-lg flex items-center justify-center text-5xl font-bold overflow-hidden shadow-lg">
+                        <div class="absolute top-0 left-0 w-full h-1/2 bg-white/10"></div>
+                        <span id="seconds-tens" class="digit-span relative z-10">0</span>
+                        <div class="flip-line absolute top-1/2 left-0 w-full h-0.5 z-20"></div>
+                    </div>
+                </div>
+                <!-- FlipCard Seconds Ones -->
+                <div class="flex flex-col items-center">
+                    <div
+                        class="flip-card relative w-16 h-24 rounded-lg flex items-center justify-center text-5xl font-bold overflow-hidden shadow-lg">
+                        <div class="absolute top-0 left-0 w-full h-1/2 bg-white/10"></div>
+                        <span id="seconds-ones" class="digit-span relative z-10">0</span>
+                        <div class="flip-line absolute top-1/2 left-0 w-full h-0.5 z-20"></div>
+                    </div>
                 </div>
             </div>
 
+            <!-- Labels for Minutes/Seconds -->
+            <div class="flex w-full justify-around -mt-2">
+                <span class="label text-xs uppercase tracking-widest">Minutes</span>
+                <span class="label text-xs uppercase tracking-widest">Seconds</span>
+            </div>
+
             <!-- Controls: Set to full width of parent -->
-            <div class="flex justify-between w-full max-w-none">
+            <div class="flex justify-between w-full max-w-none pt-2">
 
                 <!-- 1. Clock Icon: 25 min (Standard size) -->
                 <button id="btn-pomodoro" title="Start Pomodoro (25 min)"
@@ -208,10 +275,15 @@
             // --- Constants ---
             const POMODORO_TIME = 25 * 60;
             const SHORT_BREAK_TIME = 5 * 60;
+            const ANIMATION_DURATION = 600; // 0.6s
+            const ANIMATION_HALFWAY = ANIMATION_DURATION / 2 - 10; // 290ms
 
             // --- DOM Elements ---
-            const minutesEl = document.getElementById('minutes');
-            const secondsEl = document.getElementById('seconds');
+            const minutesTensEl = document.getElementById('minutes-tens');
+            const minutesOnesEl = document.getElementById('minutes-ones');
+            const secondsTensEl = document.getElementById('seconds-tens');
+            const secondsOnesEl = document.getElementById('seconds-ones');
+
             const playPauseBtn = document.getElementById('btn-play-pause');
             const playIcon = document.getElementById('play-icon');
             const pauseIcon = document.getElementById('pause-icon');
@@ -251,19 +323,43 @@
             };
 
             // --- Helper Functions ---
-            const formatTime = (seconds) => {
-                const mins = Math.floor(seconds / 60);
-                const secs = seconds % 60;
-                return [
-                    String(mins).padStart(2, '0'),
-                    String(secs).padStart(2, '0')
-                ];
+
+            // New helper to split time into 4 digits
+            const formatTimeDigits = (seconds) => {
+                const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
+                const secs = String(seconds % 60).padStart(2, '0');
+                return [mins[0], mins[1], secs[0], secs[1]];
             };
 
-            const updateDisplay = () => {
-                const [mins, secs] = formatTime(timeLeft);
-                minutesEl.textContent = mins;
-                secondsEl.textContent = secs;
+            // New function to handle flipping a single digit
+            function flipDigit(element, newDigit) {
+                // Don't flip if the digit is the same
+                if (element.textContent === newDigit) return;
+                // Don't flip if it's already flipping
+                if (element.classList.contains('flipping')) return;
+
+                // Store the next digit in a data attribute
+                element.dataset.nextDigit = newDigit;
+                // Add the animation class
+                element.classList.add('flipping');
+            }
+
+            const updateDisplay = (isInitial = false) => {
+                const [minTens, minOnes, secTens, secOnes] = formatTimeDigits(timeLeft);
+
+                if (isInitial) {
+                    // On initial load, just set the text
+                    minutesTensEl.textContent = minTens;
+                    minutesOnesEl.textContent = minOnes;
+                    secondsTensEl.textContent = secTens;
+                    secondsOnesEl.textContent = secOnes;
+                } else {
+                    // On updates, trigger the flip animation
+                    flipDigit(minutesTensEl, minTens);
+                    flipDigit(minutesOnesEl, minOnes);
+                    flipDigit(secondsTensEl, secTens);
+                    flipDigit(secondsOnesEl, secOnes);
+                }
             };
 
             const stopTimer = (reset) => {
@@ -282,7 +378,7 @@
                 stopTimer(true);
                 initialTime = duration;
                 timeLeft = duration;
-                updateDisplay();
+                updateDisplay(true); // Force initial display
             };
 
             const handlePlayPause = () => {
@@ -306,7 +402,7 @@
 
                     intervalId = setInterval(() => {
                         timeLeft--;
-                        updateDisplay();
+                        updateDisplay(); // Will trigger flips
 
                         if (timeLeft <= 0) {
                             stopTimer(false);
@@ -322,7 +418,7 @@
             const handleReset = () => {
                 stopTimer(true);
                 timeLeft = initialTime;
-                updateDisplay();
+                updateDisplay(true); // Force reset display
             };
 
             // --- Event Listeners ---
@@ -331,8 +427,28 @@
             playPauseBtn.onclick = handlePlayPause;
             resetBtn.onclick = handleReset;
 
+            // --- Animation Event Listeners ---
+            // We set these up once on load
+            const digitElements = [minutesTensEl, minutesOnesEl, secondsTensEl, secondsOnesEl];
+
+            digitElements.forEach(el => {
+                // When the animation starts...
+                el.addEventListener('animationstart', (e) => {
+                    // ...wait until it's halfway flipped (scaleY=0)
+                    setTimeout(() => {
+                        // Then update the text content
+                        e.target.textContent = e.target.dataset.nextDigit;
+                    }, ANIMATION_HALFWAY);
+                });
+
+                // When the animation ends, remove the class
+                el.addEventListener('animationend', (e) => {
+                    e.target.classList.remove('flipping');
+                });
+            });
+
             // --- Initial Load ---
-            updateDisplay();
+            updateDisplay(true); // Set initial time without animation
         });
     </script>
 </body>
