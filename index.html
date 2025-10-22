@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Timer</title>
+    <!-- We'll use Tailwind via CDN to easily handle the utility classes -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        /* This style block defines all the custom colors and animations,
+           just like in the React version. */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                Helvetica, Arial, sans-serif, "Apple Color Emoji",
+                "Segoe UI Emoji";
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* --- Color Scheme (Things 3 Inspired) --- */
+        :root {
+            --bg-color: #f7f7f7;
+            --widget-bg: #ffffff;
+            --text-color: #1a1a1a;
+            --text-color-secondary: #8a8a8a;
+            --button-bg: #efefef;
+            --button-hover-bg: #e4e4e4;
+            --accent-color: #007aff;
+            --accent-color-light: #e6f2ff;
+            --accent-shadow: rgba(0, 122, 255, 0.15);
+            /* New vars for flip clock */
+            --flip-bg: #2C2C2E;
+            --flip-text: #FFFFFF;
+            --flip-line: #1C1C1E;
+        }
+
+        /* Detect dark mode from the OS */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #1c1c1e;
+                --widget-bg: #2c2c2e;
+                --text-color: #ededed;
+                --text-color-secondary: #8d8d8d;
+                --button-bg: #3a3a3c;
+                --button-hover-bg: #4a4a4c;
+                --accent-color: #0a84ff;
+                --accent-color-light: #1a3a5f;
+                --accent-shadow: rgba(10, 132, 255, 0.2);
+                /* New vars for flip clock */
+                --flip-bg: #2C2C2E;
+                --flip-text: #FFFFFF;
+                --flip-line: #1C1C1E;
+            }
+        }
+
+        /* --- Time's Up Animation --- */
+        @keyframes gentle-pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            }
+
+            50% {
+                transform: scale(1.03);
+                box-shadow: 0 8px 25px var(--accent-shadow);
+            }
+
+            100% {
+                transform: scale(1);
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            }
+        }
+
+        .timer-finished {
+            /* Run the animation twice */
+            animation: gentle-pulse 1.2s ease-in-out 2;
+        }
+
+        /* --- Manual Flip Card Styling --- 
+           Tailwind will handle layout, but we use CSS vars for colors.
+        */
+        .flip-card {
+            background-color: var(--flip-bg);
+            color: var(--flip-text);
+        }
+
+        .flip-line {
+            background-color: var(--flip-line);
+        }
+
+        .label {
+            color: var(--text-color-secondary);
+        }
+
+        .widget-container {
+            background-color: var(--widget-bg);
+        }
+
+        .control-button {
+            background-color: var(--button-bg);
+            color: var(--text-color-secondary);
+        }
+
+        .control-button:hover {
+            background-color: var(--button-hover-bg);
+        }
+
+        .play-pause-button {
+            background-color: var(--accent-color-light);
+            color: var(--accent-color);
+        }
+
+        .page-bg {
+            background-color: var(--bg-color);
+        }
+    </style>
+</head>
+
+<body class="page-bg">
+
+    <!-- The main widget UI -->
+    <div class="flex items-center justify-center w-full min-h-screen">
+        <div id="widget-container"
+            class="widget-container w-[320px] rounded-2xl shadow-lg p-6 flex flex-col items-center gap-6">
+
+            <!-- Timer Display -->
+            <div class="flex gap-4">
+                <!-- FlipCard Minutes -->
+                <div class="flex flex-col items-center">
+                    <div
+                        class="flip-card relative w-28 h-36 rounded-xl flex items-center justify-center text-7xl font-bold overflow-hidden shadow-lg">
+                        <div class="absolute top-0 left-0 w-full h-1/2 bg-white/10"></div>
+                        <span id="minutes" class="relative z-10">25</span>
+                        <div class="flip-line absolute top-1/2 left-0 w-full h-0.5 z-20"></div>
+                    </div>
+                    <span class="label text-xs uppercase tracking-widest mt-3">Minutes</span>
+                </div>
+                <!-- FlipCard Seconds -->
+                <div class="flex flex-col items-center">
+                    <div
+                        class="flip-card relative w-28 h-36 rounded-xl flex items-center justify-center text-7xl font-bold overflow-hidden shadow-lg">
+                        <div class="absolute top-0 left-0 w-full h-1/2 bg-white/10"></div>
+                        <span id="seconds" class="relative z-10">00</span>
+                        <div class="flip-line absolute top-1/2 left-0 w-full h-0.5 z-20"></div>
+                    </div>
+                    <span class="label text-xs uppercase tracking-widest mt-3">Seconds</span>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="flex justify-between w-full max-w-xs">
+
+                <!-- 1. Clock Icon: 25 min -->
+                <button id="btn-pomodoro" title="Start Pomodoro (25 min)"
+                    class="control-button w-12 h-12 rounded-full flex items-center justify-center transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </button>
+
+                <!-- 2. Play/Pause -->
+                <button id="btn-play-pause" title="Play"
+                    class="play-pause-button w-14 h-14 rounded-full flex items-center justify-center transition-all transform hover:scale-105">
+                    <!-- Play Icon -->
+                    <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke-width="1.5" stroke="currentColor" class="w-7 h-7">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+                    </svg>
+                    <!-- Pause Icon (hidden by default) -->
+                    <svg id="pause-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke-width="1.5" stroke="currentColor" class="w-7 h-7 hidden">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />
+                    </svg>
+                </button>
+
+                <!-- 3. Leaf Icon: 5 min -->
+                <button id="btn-break" title="Start Short Break (5 min)"
+                    class="control-button w-12 h-12 rounded-full flex items-center justify-center transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM18 15.75l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 18l-1.035.259a3.375 3.375 0 00-2.456 2.456L18 21.75l-.259-1.035a3.375 3.375 0 00-2.456-2.456L14.25 18l1.036-.259a3.375 3.375 0 002.455-2.456L18 15.75z" />
+                    </svg>
+                </button>
+
+                <!-- 4. Rotate Icon: Reset -->
+                <button id="btn-reset" title="Reset Timer"
+                    class="control-button w-12 h-12 rounded-full flex items-center justify-center transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Constants ---
+            const POMODORO_TIME = 25 * 60;
+            const SHORT_BREAK_TIME = 5 * 60;
+
+            // --- DOM Elements ---
+            const minutesEl = document.getElementById('minutes');
+            const secondsEl = document.getElementById('seconds');
+            const playPauseBtn = document.getElementById('btn-play-pause');
+            const playIcon = document.getElementById('play-icon');
+            const pauseIcon = document.getElementById('pause-icon');
+            const pomodoroBtn = document.getElementById('btn-pomodoro');
+            const breakBtn = document.getElementById('btn-break');
+            const resetBtn = document.getElementById('btn-reset');
+            const widgetContainer = document.getElementById('widget-container');
+
+            // --- State ---
+            let initialTime = POMODORO_TIME;
+            let timeLeft = POMODORO_TIME;
+            let isRunning = false;
+            let intervalId = null;
+            let audioContext = null;
+
+            // --- Audio Function ---
+            const playBeep = () => {
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+                gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.5);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+            };
+
+            // --- Helper Functions ---
+            const formatTime = (seconds) => {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return [
+                    String(mins).padStart(2, '0'),
+                    String(secs).padStart(2, '0')
+                ];
+            };
+
+            const updateDisplay = () => {
+                const [mins, secs] = formatTime(timeLeft);
+                minutesEl.textContent = mins;
+                secondsEl.textContent = secs;
+            };
+
+            const stopTimer = (reset) => {
+                clearInterval(intervalId);
+                intervalId = null;
+                isRunning = false;
+                playIcon.classList.remove('hidden');
+                pauseIcon.classList.add('hidden');
+                playPauseBtn.setAttribute('title', 'Play');
+                if (reset) {
+                    widgetContainer.classList.remove('timer-finished');
+                }
+            };
+
+            const startTimer = (duration) => {
+                stopTimer(true);
+                initialTime = duration;
+                timeLeft = duration;
+                updateDisplay();
+            };
+
+            const handlePlayPause = () => {
+                // Resume AudioContext on user interaction
+                if (audioContext && audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+
+                if (isRunning) {
+                    stopTimer(false);
+                } else {
+                    if (timeLeft <= 0) {
+                        // Don't start if timer is at 0
+                        return;
+                    }
+                    isRunning = true;
+                    playIcon.classList.add('hidden');
+                    pauseIcon.classList.remove('hidden');
+                    playPauseBtn.setAttribute('title', 'Pause');
+                    widgetContainer.classList.remove('timer-finished');
+
+                    intervalId = setInterval(() => {
+                        timeLeft--;
+                        updateDisplay();
+
+                        if (timeLeft <= 0) {
+                            stopTimer(false);
+                            playBeep();
+                            widgetContainer.classList.add('timer-finished');
+                            // Remove animation class after it finishes
+                            setTimeout(() => widgetContainer.classList.remove('timer-finished'), 2400);
+                        }
+                    }, 1000);
+                }
+            };
+
+            const handleReset = () => {
+                stopTimer(true);
+                timeLeft = initialTime;
+                updateDisplay();
+            };
+
+            // --- Event Listeners ---
+            pomodoroBtn.onclick = () => startTimer(POMODORO_TIME);
+            breakBtn.onclick = () => startTimer(SHORT_BREAK_TIME);
+            playPauseBtn.onclick = handlePlayPause;
+            resetBtn.onclick = handleReset;
+
+            // --- Initial Load ---
+            updateDisplay();
+        });
+    </script>
+</body>
+
+</html>
