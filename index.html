@@ -121,37 +121,40 @@
 
     <!-- The main widget UI -->
     <div class="flex items-center justify-center w-full min-h-screen">
+        <!-- Main container: Reduced width and gap -->
         <div id="widget-container"
-            class="widget-container w-[320px] rounded-2xl shadow-lg p-6 flex flex-col items-center gap-6">
+            class="widget-container w-[280px] rounded-2xl shadow-lg p-5 flex flex-col items-center gap-5">
 
-            <!-- Timer Display -->
-            <div class="flex gap-4">
-                <!-- FlipCard Minutes -->
+            <!-- Timer Display: Reduced gap -->
+            <div class="flex gap-3">
+                <!-- FlipCard Minutes: Reduced size and font -->
                 <div class="flex flex-col items-center">
                     <div
-                        class="flip-card relative w-28 h-36 rounded-xl flex items-center justify-center text-7xl font-bold overflow-hidden shadow-lg">
+                        class="flip-card relative w-24 h-32 rounded-xl flex items-center justify-center text-6xl font-bold overflow-hidden shadow-lg">
                         <div class="absolute top-0 left-0 w-full h-1/2 bg-white/10"></div>
                         <span id="minutes" class="relative z-10">25</span>
                         <div class="flip-line absolute top-1/2 left-0 w-full h-0.5 z-20"></div>
                     </div>
-                    <span class="label text-xs uppercase tracking-widest mt-3">Minutes</span>
+                    <!-- Label: Reduced margin-top -->
+                    <span class="label text-xs uppercase tracking-widest mt-2">Minutes</span>
                 </div>
-                <!-- FlipCard Seconds -->
+                <!-- FlipCard Seconds: Reduced size and font -->
                 <div class="flex flex-col items-center">
                     <div
-                        class="flip-card relative w-28 h-36 rounded-xl flex items-center justify-center text-7xl font-bold overflow-hidden shadow-lg">
+                        class="flip-card relative w-24 h-32 rounded-xl flex items-center justify-center text-6xl font-bold overflow-hidden shadow-lg">
                         <div class="absolute top-0 left-0 w-full h-1/2 bg-white/10"></div>
                         <span id="seconds" class="relative z-10">00</span>
                         <div class="flip-line absolute top-1/2 left-0 w-full h-0.5 z-20"></div>
                     </div>
-                    <span class="label text-xs uppercase tracking-widest mt-3">Seconds</span>
+                    <!-- Label: Reduced margin-top -->
+                    <span class="label text-xs uppercase tracking-widest mt-2">Seconds</span>
                 </div>
             </div>
 
-            <!-- Controls -->
-            <div class="flex justify-between w-full max-w-xs">
+            <!-- Controls: Set to full width of parent -->
+            <div class="flex justify-between w-full max-w-none">
 
-                <!-- 1. Clock Icon: 25 min -->
+                <!-- 1. Clock Icon: 25 min (Standard size) -->
                 <button id="btn-pomodoro" title="Start Pomodoro (25 min)"
                     class="control-button w-12 h-12 rounded-full flex items-center justify-center transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -161,23 +164,23 @@
                     </svg>
                 </button>
 
-                <!-- 2. Play/Pause -->
+                <!-- 2. Play/Pause: Reduced to standard size -->
                 <button id="btn-play-pause" title="Play"
-                    class="play-pause-button w-14 h-14 rounded-full flex items-center justify-center transition-all transform hover:scale-105">
-                    <!-- Play Icon -->
+                    class="play-pause-button w-12 h-12 rounded-full flex items-center justify-center transition-all transform hover:scale-105">
+                    <!-- Play Icon: Reduced size -->
                     <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                        stroke-width="1.5" stroke="currentColor" class="w-7 h-7">
+                        stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
                     </svg>
-                    <!-- Pause Icon (hidden by default) -->
+                    <!-- Pause Icon (hidden by default): Reduced size -->
                     <svg id="pause-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                        stroke-width="1.5" stroke="currentColor" class="w-7 h-7 hidden">
+                        stroke-width="1.5" stroke="currentColor" class="w-6 h-6 hidden">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />
                     </svg>
                 </button>
 
-                <!-- 3. Leaf Icon: 5 min -->
+                <!-- 3. Break Icon: 5 min (Standard size) -->
                 <button id="btn-break" title="Start Short Break (5 min)"
                     class="control-button w-12 h-12 rounded-full flex items-center justify-center transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -187,7 +190,7 @@
                     </svg>
                 </button>
 
-                <!-- 4. Rotate Icon: Reset -->
+                <!-- 4. Rotate Icon: Reset (Standard size) -->
                 <button id="btn-reset" title="Reset Timer"
                     class="control-button w-12 h-12 rounded-full flex items-center justify-center transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
